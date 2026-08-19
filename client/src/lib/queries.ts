@@ -26,7 +26,6 @@ export function useBootstrap() {
   return useQuery({
     queryKey: ['bootstrap'],
     queryFn: () => api.get<Bootstrap>('/api/bootstrap'),
-    staleTime: 5 * 60_000,
   })
 }
 
@@ -34,7 +33,6 @@ export function useCategories(all = false) {
   return useQuery({
     queryKey: ['categories', all],
     queryFn: () => api.get<Category[]>(`/api/categories${qs({ all: all ? 1 : undefined })}`),
-    staleTime: 60_000,
   })
 }
 
@@ -42,7 +40,6 @@ export function useFeatured() {
   return useQuery({
     queryKey: ['featured'],
     queryFn: () => api.get<FeaturedData>('/api/featured'),
-    staleTime: 30_000,
   })
 }
 
@@ -52,7 +49,6 @@ export function useArticles(params: ArticleQueryParams, enabled = true) {
     queryFn: () => api.get<ArticleList>(`/api/articles${qs(params as Record<string, string | number | boolean | undefined>)}`),
     enabled,
     placeholderData: keepPreviousData,
-    staleTime: 30_000,
   })
 }
 
@@ -62,7 +58,6 @@ export function useArticle(slug: string | undefined) {
     queryFn: () => api.get<Article>(`/api/articles/${encodeURIComponent(slug ?? '')}`),
     enabled: Boolean(slug),
     retry: false,
-    staleTime: 30_000,
   })
 }
 
@@ -71,7 +66,6 @@ export function useAdminArticle(id: number | undefined) {
     queryKey: ['adminArticle', id],
     queryFn: () => api.get<Article>(`/api/admin/articles/${id}`),
     enabled: Boolean(id),
-    staleTime: 10_000,
   })
 }
 
@@ -80,7 +74,6 @@ export function useSession() {
     queryKey: ['session'],
     queryFn: () => api.get<SessionInfo>('/api/auth/session'),
     retry: false,
-    staleTime: 30_000,
     refetchOnWindowFocus: true,
   })
 }
@@ -89,7 +82,6 @@ export function useStats() {
   return useQuery({
     queryKey: ['stats'],
     queryFn: () => api.get<Stats>('/api/stats'),
-    staleTime: 30_000,
   })
 }
 

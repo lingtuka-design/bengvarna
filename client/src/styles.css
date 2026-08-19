@@ -49,11 +49,15 @@
 
   .article-body,
   .editor-content {
-    @apply text-[1.0625rem] leading-[1.85];
+    @apply text-[1.0625rem] leading-[1.9];
   }
   .article-body p,
   .editor-content p {
-    @apply my-5;
+    @apply mb-6 mt-0;
+  }
+  .article-body div,
+  .editor-content div:not(.editor-figure):not(.editor-figcaption) {
+    @apply mb-6 mt-0;
   }
   .article-body h2,
   .editor-content h2 {

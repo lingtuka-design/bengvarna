@@ -13,8 +13,8 @@ import { useToast } from '../ui/Toast'
 import type { Article } from '../../lib/types'
 
 export function FeaturedManager() {
-  const { data: featured, isLoading } = useFeatured()
-  const { data: poolData } = useArticles({ perPage: 100 })
+  const { data: featured, isLoading: featuredLoading } = useFeatured()
+  const { data: poolData, isLoading: articlesLoading } = useArticles({ all: true, perPage: 200 })
   const queryClient = useQueryClient()
   const { toast } = useToast()
   const [primaryId, setPrimaryId] = useState<number | null>(null)
@@ -30,12 +30,20 @@ export function FeaturedManager() {
     }
   }, [featured, ready])
 
+  const allArticles = useMemo(() => {
+    const map = new Map<number, Article>()
+    if (featured?.primary) map.set(featured.primary.id, featured.primary)
+    featured?.secondary.forEach((a) => map.set(a.id, a))
+    poolData?.items.forEach((a) => map.set(a.id, a))
+    return Array.from(map.values())
+  }, [featured, poolData])
+
   const pool = useMemo(() => {
     const ids = new Set<number>()
     if (primaryId) ids.add(primaryId)
     secondaryIds.forEach((id) => ids.add(id))
-    return (poolData?.items ?? []).filter((a) => !ids.has(a.id))
-  }, [poolData, primaryId, secondaryIds])
+    return allArticles.filter((a) => !ids.has(a.id))
+  }, [allArticles, primaryId, secondaryIds])
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ['featured'] })
@@ -45,7 +53,7 @@ export function FeaturedManager() {
   }
 
   const saveMutation = useMutation({
-    mutationFn: () => {
+    mutationFn: async () => {
       const items: Array<{ article_id: number; position: number }> = []
       if (primaryId) items.push({ article_id: primaryId, position: 0 })
       secondaryIds.forEach((id, i) => items.push({ article_id: id, position: i + 1 }))
@@ -53,7 +61,7 @@ export function FeaturedManager() {
     },
     onSuccess: () => {
       invalidate()
-      toast('Featured news saved')
+      toast('Featured news saved successfully')
     },
     onError: (e) => toast(e instanceof Error ? e.message : 'Save failed', 'error'),
   })
@@ -63,10 +71,9 @@ export function FeaturedManager() {
     setSecondaryIds(featured?.secondary.map((a) => a.id) ?? [])
   }
 
-  if (isLoading) return <Spinner className="mx-auto mt-12" />
+  if (featuredLoading || (articlesLoading && !ready)) return <Spinner className="mx-auto mt-12" />
 
-  const primaryArticle: Article | undefined =
-    (featured?.primary?.id === primaryId ? featured.primary : undefined) ?? (primaryId ? poolData?.items.find((a) => a.id === primaryId) : undefined)
+  const primaryArticle: Article | undefined = primaryId ? allArticles.find((a) => a.id === primaryId) : undefined
 
   const move = (index: number, direction: -1 | 1) => {
     setSecondaryIds((ids) => {
@@ -106,7 +113,7 @@ export function FeaturedManager() {
           onChange={(e) => setPrimaryId(e.target.value === '' ? null : Number(e.target.value))}
           options={[
             { value: '', label: 'No primary story' },
-            ...(poolData?.items ?? []).map((a) => ({ value: String(a.id), label: a.title })),
+            ...allArticles.map((a) => ({ value: String(a.id), label: `${a.title}${a.status !== 'published' ? ' (Draft)' : ''}` })),
           ]}
           aria-label="Primary featured article"
         />
@@ -141,7 +148,7 @@ export function FeaturedManager() {
         ) : (
           <ul className="mt-4 space-y-3">
             {secondaryIds.map((id, index) => {
-              const article = poolData?.items.find((a) => a.id === id)
+              const article = allArticles.find((a) => a.id === id)
               if (!article) return null
               return (
                 <li key={id} className="flex items-center gap-3 rounded-xl border border-stone-200 p-3 dark:border-stone-800">

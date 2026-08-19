@@ -27,31 +27,34 @@ featuredRoutes.put('/api/featured', requireAuth, async (c) => {
   if (!Array.isArray(items) || items.length > 20) return c.json({ error: 'Invalid payload' }, 400)
 
   const seen = new Set<number>()
+  const validItems: Array<{ article_id: number; position: number }> = []
   for (const item of items) {
-    if (!Number.isFinite(item.article_id) || !Number.isFinite(item.position) || item.position < 0 || seen.has(item.article_id)) {
-      return c.json({ error: 'Invalid featured items' }, 400)
+    if (Number.isFinite(item.article_id) && Number.isFinite(item.position) && item.position >= 0 && !seen.has(item.article_id)) {
+      seen.add(item.article_id)
+      validItems.push(item)
     }
-    seen.add(item.article_id)
   }
 
-  if (items.length > 0) {
-    const ids = items.map((i) => i.article_id)
+  if (validItems.length > 0) {
+    const ids = validItems.map((i) => i.article_id)
     const placeholders = ids.map(() => '?').join(', ')
     const { results } = await c.env.DB.prepare(
-      `SELECT id FROM articles WHERE id IN (${placeholders}) AND status = 'published'`,
+      `SELECT id FROM articles WHERE id IN (${placeholders})`,
     )
       .bind(...ids)
       .all<{ id: number }>()
-    if (results.length !== items.length) {
-      return c.json({ error: 'All featured articles must exist and be published' }, 400)
+    const existingIds = new Set(results.map((r) => r.id))
+    const existingItems = validItems.filter((item) => existingIds.has(item.article_id))
+
+    const batch: D1PreparedStatement[] = [c.env.DB.prepare('DELETE FROM featured_articles')]
+    for (const item of existingItems) {
+      batch.push(c.env.DB.prepare('INSERT INTO featured_articles (article_id, position) VALUES (?, ?)').bind(item.article_id, item.position))
     }
+    await c.env.DB.batch(batch)
+    return c.json({ ok: true })
   }
 
-  const batch: D1PreparedStatement[] = [c.env.DB.prepare('DELETE FROM featured_articles')]
-  for (const item of items) {
-    batch.push(c.env.DB.prepare('INSERT INTO featured_articles (article_id, position) VALUES (?, ?)').bind(item.article_id, item.position))
-  }
-  await c.env.DB.batch(batch)
+  await c.env.DB.prepare('DELETE FROM featured_articles').run()
   return c.json({ ok: true })
 })
 

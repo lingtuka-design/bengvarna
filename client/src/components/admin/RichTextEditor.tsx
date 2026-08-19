@@ -206,6 +206,45 @@ export function RichTextEditor({ value, onChange, className, minHeight = '18rem'
     [refresh, handleInput],
   )
 
+  const handlePaste = useCallback(
+    (e: React.ClipboardEvent<HTMLDivElement>) => {
+      const plain = e.clipboardData.getData('text/plain')
+      const html = e.clipboardData.getData('text/html')
+
+      // If pasting plain text from Notepad or unformatted text
+      if (plain && (!html || !/<(p|div|h[1-6]|ul|ol|table|blockquote)/i.test(html))) {
+        e.preventDefault()
+
+        const normalized = plain.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim()
+        if (!normalized) return
+
+        // Split by two or more newlines into distinct paragraphs
+        const paragraphs = normalized
+          .split(/\n{2,}/)
+          .map((p) => p.trim())
+          .filter(Boolean)
+
+        if (paragraphs.length === 0) return
+
+        const escapeHtml = (str: string) =>
+          str
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;')
+
+        const htmlToInsert = paragraphs
+          .map((p) => `<p>${escapeHtml(p).replace(/\n/g, '<br>')}</p>`)
+          .join('')
+
+        document.execCommand('insertHTML', false, htmlToInsert)
+        handleInput()
+      }
+    },
+    [handleInput],
+  )
+
   return (
     <div className={cn('overflow-hidden rounded-2xl border border-stone-200 bg-white dark:border-stone-800 dark:bg-stone-900', className)}>
       <div
@@ -312,6 +351,7 @@ export function RichTextEditor({ value, onChange, className, minHeight = '18rem'
         className="editor-content w-full px-4 py-4 outline-none sm:px-6"
         style={{ minHeight }}
         onInput={handleInput}
+        onPaste={handlePaste}
         onKeyUp={refresh}
         onMouseUp={refresh}
         onBlurCapture={handleFocusOut}

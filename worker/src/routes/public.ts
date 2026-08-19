@@ -40,9 +40,14 @@ publicRoutes.get('/sitemap.xml', async (c) => {
   ).all<{ slug: string; updated_at: string }>()
   const urls = results
     .map((r) => `  <url><loc>${base}/article/${r.slug}</loc><lastmod>${r.updated_at.slice(0, 10)}</lastmod></url>`)
-    .join('\n')
   const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url><loc>${base}/</loc></url>\n  <url><loc>${base}/news</loc></url>\n  <url><loc>${base}/search</loc></url>\n  <url><loc>${base}/about</loc></url>\n${urls}\n</urlset>`
   c.header('Content-Type', 'application/xml; charset=utf-8')
   c.header('Cache-Control', 'public, max-age=3600')
   return c.body(xml)
+})
+
+publicRoutes.get('/ads.txt', (c) => {
+  c.header('Content-Type', 'text/plain; charset=utf-8')
+  c.header('Cache-Control', 'public, max-age=86400')
+  return c.text('google.com, pub-5538940850178274, DIRECT, f08c47fec0942fa0\n')
 })

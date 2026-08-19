@@ -46,6 +46,12 @@ app.route('/', mediaRoutes)
 app.route('/', settingsRoutes)
 app.route('/', statsRoutes)
 
+app.get('/ads.txt', (c) => {
+  c.header('Content-Type', 'text/plain; charset=utf-8')
+  c.header('Cache-Control', 'public, max-age=86400')
+  return c.text('google.com, pub-5538940850178274, DIRECT, f08c47fec0942fa0\n')
+})
+
 app.get('*', async (c) => {
   const path = new URL(c.req.url).pathname
   if (path.startsWith('/api/') || path.startsWith('/media/')) return c.json({ error: 'Not found' }, 404)

@@ -13,7 +13,7 @@ enabled = true
 [[d1_databases]]
 binding = "DB"
 database_name = "bengvarna-db"
-database_id = "00000000-0000-0000-0000-000000000000"
+database_id = "bb8e5913-b5ff-40d4-9ed6-b1770557c7b1"
 migrations_dir = "migrations"
 
 [[r2_buckets]]
@@ -21,4 +21,4 @@ binding = "MEDIA"
 bucket_name = "bengvarna-media"
 
 [vars]
-PUBLIC_SITE_URL = "http://localhost:8787"
+PUBLIC_SITE_URL = "https://bengvarna.inkhel.workers.dev"

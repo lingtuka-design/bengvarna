@@ -26,13 +26,6 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/admin/settings', label: 'Settings', icon: 'sliders' },
 ]
 
-const MOBILE_TABS: NavItem[] = [
-  { to: '/admin/dashboard', label: 'Dashboard', icon: 'dashboard' },
-  { to: '/admin/articles', label: 'Articles', icon: 'file' },
-  { to: '/admin/categories', label: 'Categories', icon: 'tag' },
-  { to: '/admin/media', label: 'Media', icon: 'image' },
-]
-
 function isActive(pathname: string, item: NavItem): boolean {
   if (item.exact) return pathname === item.to
   return pathname === item.to || pathname.startsWith(`${item.to}/`)
@@ -162,38 +155,11 @@ export function AdminLayout() {
         </div>
       )}
 
-      <main className="px-4 pb-28 pt-6 sm:px-6 lg:ml-60 lg:px-10 lg:pb-16 lg:pt-10">
+      <main className="px-4 pb-12 pt-6 sm:px-6 lg:ml-60 lg:px-10 lg:pb-16 lg:pt-10">
         <div className="mx-auto w-full max-w-6xl">
           <Outlet />
         </div>
       </main>
-
-      <nav
-        aria-label="Admin quick navigation"
-        className="fixed inset-x-0 bottom-0 z-40 flex border-t border-stone-200 bg-white pb-[env(safe-area-inset-bottom)] dark:border-stone-800 dark:bg-stone-950 lg:hidden"
-      >
-        {MOBILE_TABS.map((item) => (
-          <Link
-            key={item.to}
-            to={item.to}
-            className={cn(
-              'flex h-14 flex-1 flex-col items-center justify-center gap-0.5 text-[11px] font-semibold transition-colors',
-              isActive(pathname, item) ? 'text-accent-600 dark:text-accent-400' : 'text-stone-400 hover:text-stone-700 dark:text-stone-500 dark:hover:text-stone-300',
-            )}
-          >
-            <Icon name={item.icon} className="size-5" />
-            {item.label}
-          </Link>
-        ))}
-        <button
-          type="button"
-          onClick={() => setDrawerOpen(true)}
-          className="flex h-14 flex-1 flex-col items-center justify-center gap-0.5 text-[11px] font-semibold text-stone-400 transition-colors hover:text-stone-700 dark:text-stone-500 dark:hover:text-stone-300"
-        >
-          <Icon name="dots" className="size-5" />
-          More
-        </button>
-      </nav>
     </div>
   )
 }

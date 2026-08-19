@@ -414,7 +414,7 @@ function ArticleEditorPage({ articleId }: { articleId?: number }) {
           </div>
         </details>
 
-        <div className="fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-30 flex gap-2 border-t border-stone-200 bg-white/95 p-3 backdrop-blur dark:border-stone-800 dark:bg-stone-950/95 lg:hidden">
+        <div className="fixed inset-x-0 bottom-0 z-40 flex gap-2 border-t border-stone-200 bg-white/95 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] backdrop-blur dark:border-stone-800 dark:bg-stone-950/95 lg:hidden">
           <Button
             variant="outline"
             className="flex-1"

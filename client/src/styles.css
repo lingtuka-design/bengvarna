@@ -1,0 +1,175 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Newsreader Variable", "Iowan Old Style", Georgia, Cambria, "Times New Roman", serif;
+
+  --color-accent-50: #fdf3f3;
+  --color-accent-100: #fbe5e5;
+  --color-accent-200: #f6cfcf;
+  --color-accent-300: #eea8a8;
+  --color-accent-400: #e17373;
+  --color-accent-500: #cc3f3f;
+  --color-accent-600: #b32e2e;
+  --color-accent-700: #942525;
+  --color-accent-800: #7a2222;
+  --color-accent-900: #662020;
+  --color-accent-950: #3d0f0f;
+}
+
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    @apply bg-stone-50 font-sans text-stone-900 antialiased dark:bg-stone-950 dark:text-stone-100;
+  }
+  ::selection {
+    @apply bg-accent-500/25;
+  }
+  button {
+    cursor: pointer;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  .section-label {
+    @apply font-display text-base font-semibold uppercase tracking-[0.18em] text-stone-500 dark:text-stone-400;
+  }
+
+  .article-body,
+  .editor-content {
+    @apply text-[1.0625rem] leading-[1.85];
+  }
+  .article-body p,
+  .editor-content p {
+    @apply my-5;
+  }
+  .article-body h2,
+  .editor-content h2 {
+    @apply mb-4 mt-10 font-display text-2xl font-semibold tracking-tight md:text-3xl;
+  }
+  .article-body h3,
+  .editor-content h3 {
+    @apply mb-3 mt-8 font-display text-xl font-semibold tracking-tight md:text-2xl;
+  }
+  .article-body h4,
+  .editor-content h4 {
+    @apply mb-2 mt-6 font-semibold;
+  }
+  .article-body blockquote,
+  .editor-content blockquote {
+    @apply my-7 border-l-2 border-accent-500 pl-5 font-display text-xl italic text-stone-700 dark:border-accent-400 dark:text-stone-300;
+  }
+  .article-body ul,
+  .editor-content ul {
+    @apply my-5 list-disc space-y-1.5 pl-6;
+  }
+  .article-body ol,
+  .editor-content ol {
+    @apply my-5 list-decimal space-y-1.5 pl-6;
+  }
+  .article-body a,
+  .editor-content a {
+    @apply text-accent-600 underline decoration-accent-400 underline-offset-2 hover:text-accent-500 dark:text-accent-400;
+  }
+  .article-body img,
+  .editor-content img {
+    @apply my-2 rounded-xl border border-stone-200 dark:border-stone-800;
+  }
+  .article-body figure,
+  .editor-content figure {
+    @apply my-8;
+  }
+  .article-body figcaption,
+  .editor-content figcaption {
+    @apply mt-3 text-center text-sm text-stone-500 dark:text-stone-400;
+  }
+  .article-body hr,
+  .editor-content hr {
+    @apply my-10 border-stone-200 dark:border-stone-800;
+  }
+  .article-body strong,
+  .editor-content strong {
+    @apply font-semibold;
+  }
+
+  .editor-content {
+    @apply min-h-64;
+  }
+  .editor-content:empty::before {
+    content: attr(data-placeholder);
+    @apply pointer-events-none text-stone-400 dark:text-stone-600;
+  }
+  .editor-content:focus {
+    outline: none;
+  }
+  .editor-figcaption:focus {
+    outline: 2px dashed var(--color-accent-400);
+    outline-offset: 4px;
+  }
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.toast-enter {
+  animation: toast-in 0.18s ease-out;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.fade-in {
+  animation: fade-in 0.15s ease-out;
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.slide-up {
+  animation: slide-up 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slide-from-left {
+  from {
+    opacity: 0;
+    transform: translateX(-24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+.slide-from-left {
+  animation: slide-from-left 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}

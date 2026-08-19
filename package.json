@@ -1,0 +1,26 @@
+{
+  "name": "bengvarna",
+  "private": true,
+  "version": "1.0.0",
+  "description": "bengvarna — a fast, modern editorial news platform built with Vite, React, TanStack Router, Tailwind CSS and Cloudflare Workers (D1 + R2).",
+  "workspaces": [
+    "client",
+    "worker"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w client",
+    "dev:worker": "npm run dev -w worker",
+    "build": "npm run build -w client",
+    "preview": "npm run preview -w client",
+    "typecheck": "npm run typecheck -w client && npm run typecheck -w worker",
+    "db:migrate:local": "npm run db:migrate:local -w worker",
+    "db:migrate:remote": "npm run db:migrate:remote -w worker",
+    "deploy": "npm run build && npm run deploy -w worker"
+  },
+  "allowScripts": {
+    "esbuild@0.25.12": true,
+    "esbuild@0.17.19": true,
+    "sharp@0.33.5": true,
+    "workerd@1.20250718.0": true
+  }
+}

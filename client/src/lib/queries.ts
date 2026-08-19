@@ -20,6 +20,7 @@ export interface ArticleQueryParams {
   status?: string
   all?: boolean
   featured?: boolean
+  exclude_featured?: boolean | number
 }
 
 export function useBootstrap() {

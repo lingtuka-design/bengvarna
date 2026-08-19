@@ -8,7 +8,7 @@ import { EmptyState } from '../components/ui/EmptyState'
 import { AdSlot } from '../components/public/AdSlot'
 
 function LatestNews() {
-  const { data, isLoading, isError } = useArticles({ page: 1, perPage: 12 })
+  const { data, isLoading, isError } = useArticles({ page: 1, perPage: 12, exclude_featured: 1 })
 
   if (isLoading) {
     return (

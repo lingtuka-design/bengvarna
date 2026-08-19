@@ -68,6 +68,7 @@ articlesRoutes.get('/api/articles', async (c) => {
   const all = c.req.query('all') === '1'
   const statusQ = (c.req.query('status') || '').trim()
   const featuredOnly = c.req.query('featured') === '1'
+  const excludeFeatured = c.req.query('exclude_featured') === '1' || c.req.query('exclude_featured') === 'true'
   const page = Math.max(1, parseInt(c.req.query('page') || '1', 10) || 1)
   const perPage = Math.min(50, Math.max(1, parseInt(c.req.query('perPage') || '12', 10) || 12))
   const offset = (page - 1) * perPage
@@ -98,6 +99,9 @@ articlesRoutes.get('/api/articles', async (c) => {
     if (featuredOnly) where.push('f.position IS NOT NULL')
   } else {
     where.push(`a.status = 'published'`)
+    if (excludeFeatured) {
+      where.push('f.position IS NULL')
+    }
   }
   const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : ''
 

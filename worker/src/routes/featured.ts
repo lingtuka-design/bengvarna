@@ -15,7 +15,7 @@ featuredRoutes.get('/api/featured', async (c) => {
      WHERE a.status = 'published'
      ORDER BY f0.position ASC`,
   ).all()
-  c.header('Cache-Control', 'public, max-age=60')
+  c.header('Cache-Control', 'no-cache, no-store, must-revalidate')
   const primary = results.length > 0 ? results[0] : null
   const secondary = results.slice(1)
   return c.json({ primary, secondary })

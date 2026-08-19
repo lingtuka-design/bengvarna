@@ -14,7 +14,7 @@ publicRoutes.get('/api/bootstrap', async (c) => {
      WHERE c.is_active = 1
      ORDER BY c.sort_order ASC, c.name ASC`,
   ).all()
-  c.header('Cache-Control', 'public, max-age=300')
+  c.header('Cache-Control', 'no-cache, no-store, must-revalidate')
   return c.json({ settings, categories: categories.results })
 })
 

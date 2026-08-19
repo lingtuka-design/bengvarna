@@ -18,7 +18,7 @@ categoriesRoutes.get('/api/categories', async (c) => {
     c.header('Cache-Control', 'no-store')
   } else {
     sql += ' WHERE c.is_active = 1 ORDER BY c.sort_order ASC, c.name ASC'
-    c.header('Cache-Control', 'public, max-age=300')
+    c.header('Cache-Control', 'no-cache, no-store, must-revalidate')
   }
   const { results } = await c.env.DB.prepare(sql).all()
   return c.json(results)

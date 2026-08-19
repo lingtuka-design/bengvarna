@@ -114,7 +114,7 @@ articlesRoutes.get('/api/articles', async (c) => {
     .bind(...binds, perPage, offset)
     .all()
 
-  c.header('Cache-Control', isAdmin ? 'no-store' : 'public, max-age=60')
+  c.header('Cache-Control', 'no-cache, no-store, must-revalidate')
   return c.json({ items: results, total, page, perPage, totalPages: Math.max(1, Math.ceil(total / perPage)) })
 })
 
@@ -123,6 +123,7 @@ articlesRoutes.get('/api/admin/articles/:id', requireAuth, async (c) => {
   if (!Number.isFinite(id)) return c.json({ error: 'Invalid id' }, 400)
   const row = await fetchArticleById(c.env.DB, id)
   if (!row) return c.json({ error: 'Article not found' }, 404)
+  c.header('Cache-Control', 'no-cache, no-store, must-revalidate')
   return c.json(row)
 })
 
@@ -134,7 +135,7 @@ articlesRoutes.get('/api/articles/:slug', async (c) => {
     .bind(slug)
     .first()
   if (!row) return c.json({ error: 'Article not found' }, 404)
-  c.header('Cache-Control', 'public, max-age=60')
+  c.header('Cache-Control', 'no-cache, no-store, must-revalidate')
   return c.json(row)
 })
 
@@ -226,7 +227,10 @@ articlesRoutes.delete('/api/articles/:id', requireAuth, async (c) => {
   if (!Number.isFinite(id)) return c.json({ error: 'Invalid id' }, 400)
   const existing = await c.env.DB.prepare('SELECT id FROM articles WHERE id = ?').bind(id).first()
   if (!existing) return c.json({ error: 'Article not found' }, 404)
-  await c.env.DB.prepare('DELETE FROM articles WHERE id = ?').bind(id).run()
+  await c.env.DB.batch([
+    c.env.DB.prepare('DELETE FROM featured_articles WHERE article_id = ?').bind(id),
+    c.env.DB.prepare('DELETE FROM articles WHERE id = ?').bind(id),
+  ])
   return c.json({ ok: true })
 })
 

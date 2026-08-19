@@ -66,6 +66,15 @@ function toDraft(article: Article): DraftState {
   }
 }
 
+function hasMeaningfulDiff(d: DraftState, source: DraftState): boolean {
+  if (d.title.trim() !== source.title.trim()) return true
+  if (d.content.trim() !== source.content.trim()) return true
+  if (d.excerpt.trim() !== source.excerpt.trim()) return true
+  if (d.cover_image_url !== source.cover_image_url) return true
+  if (d.category_id !== source.category_id) return true
+  return false
+}
+
 export function AdminArticleNew() {
   return <ArticleEditorPage />
 }
@@ -122,7 +131,7 @@ function ArticleEditorPage({ articleId }: { articleId?: number }) {
     if (isLoading || loaded) return
     const source = article ? toDraft(article) : EMPTY_DRAFT
     const stored = readBackup()
-    if (stored && JSON.stringify(stored) !== JSON.stringify(source)) {
+    if (stored && hasMeaningfulDiff(stored, source)) {
       setBackup(stored)
     } else {
       setDraft(source)
@@ -133,6 +142,15 @@ function ArticleEditorPage({ articleId }: { articleId?: number }) {
 
   useEffect(() => {
     if (!loaded || saving) return
+    const hasContent = draft.title.trim() || draft.content.trim() || draft.excerpt.trim()
+    if (!hasContent) {
+      try {
+        localStorage.removeItem(storageKey)
+      } catch {
+        /* noop */
+      }
+      return
+    }
     const t = setTimeout(() => {
       try {
         localStorage.setItem(storageKey, JSON.stringify(draft))
@@ -142,10 +160,6 @@ function ArticleEditorPage({ articleId }: { articleId?: number }) {
     }, 1500)
     return () => clearTimeout(t)
   }, [draft, loaded, storageKey, saving])
-
-  useEffect(() => {
-    if (backup) setDraft(backup)
-  }, [backup])
 
   const set = <K extends keyof DraftState>(key: K, value: DraftState[K]) => {
     setDraft((d) => ({ ...d, [key]: value }))

@@ -13,7 +13,7 @@ const app = new Hono<{ Bindings: Env }>()
 
 app.onError((err, c) => {
   console.error('[bengvarna]', err)
-  return c.json({ error: 'Internal server error' }, 500)
+  return c.json({ error: err?.message || 'Internal server error' }, 500)
 })
 
 app.use('/api/*', async (c, next) => {
@@ -27,8 +27,11 @@ app.use('/api/*', async (c, next) => {
     const url = new URL(c.req.url)
     if (url.protocol === 'https:') {
       const origin = c.req.header('origin')
+      const host = c.req.header('host')
       const allowed = c.env.PUBLIC_SITE_URL ? new URL(c.env.PUBLIC_SITE_URL).origin : url.origin
-      if (origin && origin !== allowed) return c.json({ error: 'Invalid origin' }, 403)
+      if (origin && origin !== allowed && origin !== url.origin && origin !== `https://${host}`) {
+        return c.json({ error: 'Invalid origin' }, 403)
+      }
     }
   }
   await next()

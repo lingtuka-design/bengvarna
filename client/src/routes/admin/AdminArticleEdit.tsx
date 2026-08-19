@@ -28,7 +28,7 @@ interface DraftState {
   status: ArticleStatus
   seo_title: string
   seo_description: string
-  featured: boolean
+  featured_type: 'none' | 'top' | 'sub'
   published_at: string
 }
 
@@ -44,11 +44,17 @@ const EMPTY_DRAFT: DraftState = {
   status: 'draft',
   seo_title: '',
   seo_description: '',
-  featured: false,
+  featured_type: 'none',
   published_at: new Date().toISOString(),
 }
 
 function toDraft(article: Article): DraftState {
+  let featured_type: 'none' | 'top' | 'sub' = 'none'
+  if (article.featured_position === 0) {
+    featured_type = 'top'
+  } else if (typeof article.featured_position === 'number' && article.featured_position >= 1) {
+    featured_type = 'sub'
+  }
   return {
     title: article.title,
     slug: article.slug,
@@ -61,7 +67,7 @@ function toDraft(article: Article): DraftState {
     status: article.status,
     seo_title: article.seo_title,
     seo_description: article.seo_description,
-    featured: article.featured_position !== null,
+    featured_type,
     published_at: article.published_at ?? '',
   }
 }
@@ -72,6 +78,7 @@ function hasMeaningfulDiff(d: DraftState, source: DraftState): boolean {
   if (d.excerpt.trim() !== source.excerpt.trim()) return true
   if (d.cover_image_url !== source.cover_image_url) return true
   if (d.category_id !== source.category_id) return true
+  if (d.featured_type !== source.featured_type) return true
   return false
 }
 
@@ -116,7 +123,7 @@ function ArticleEditorPage({ articleId }: { articleId?: number }) {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [saving, setSaving] = useState(false)
   const storageKey = `bengvarna-draft-${articleId ?? 'new'}`
-  const initialFeaturedRef = useRef(false)
+  const initialFeaturedTypeRef = useRef<'none' | 'top' | 'sub'>('none')
 
   const readBackup = (): DraftState | null => {
     try {
@@ -137,7 +144,12 @@ function ArticleEditorPage({ articleId }: { articleId?: number }) {
       setDraft(source)
       setLoaded(true)
     }
-    if (article) initialFeaturedRef.current = article.featured_position !== null
+    if (article) {
+      let ft: 'none' | 'top' | 'sub' = 'none'
+      if (article.featured_position === 0) ft = 'top'
+      else if (typeof article.featured_position === 'number' && article.featured_position >= 1) ft = 'sub'
+      initialFeaturedTypeRef.current = ft
+    }
   }, [article, isLoading, loaded, storageKey])
 
   useEffect(() => {
@@ -191,12 +203,21 @@ function ArticleEditorPage({ articleId }: { articleId?: number }) {
       } catch {
         /* noop */
       }
-      const wantFeatured = draft.featured
-      if (wantFeatured !== initialFeaturedRef.current) {
+      const wantFeaturedType = draft.featured_type
+      if (saved.status === 'published') {
+        if (wantFeaturedType !== initialFeaturedTypeRef.current || !articleId) {
+          await api
+            .post<{ ok: boolean }>('/api/featured/assign', { article_id: saved.id, type: wantFeaturedType })
+            .catch(() => null)
+          initialFeaturedTypeRef.current = wantFeaturedType
+        }
+      } else if (initialFeaturedTypeRef.current !== 'none') {
         await api
-          .post<{ ok: boolean }>('/api/featured/toggle', { article_id: saved.id, featured: wantFeatured })
+          .post<{ ok: boolean }>('/api/featured/assign', { article_id: saved.id, type: 'none' })
           .catch(() => null)
+        initialFeaturedTypeRef.current = 'none'
       }
+
       queryClient.invalidateQueries({ queryKey: ['articles'] })
       queryClient.invalidateQueries({ queryKey: ['featured'] })
       queryClient.invalidateQueries({ queryKey: ['stats'] })
@@ -205,7 +226,6 @@ function ArticleEditorPage({ articleId }: { articleId?: number }) {
       if (!articleId) {
         router.navigate({ to: '/admin/articles/$id/edit', params: { id: String(saved.id) }, replace: true })
       } else {
-        initialFeaturedRef.current = wantFeatured
         setDraft((d) => ({ ...d, status: saved.status, published_at: saved.published_at ?? '' }))
       }
       toast(saved.status === 'published' ? 'Article published' : 'Article saved')
@@ -385,6 +405,17 @@ function ArticleEditorPage({ articleId }: { articleId?: number }) {
             onChange={(url) => set('cover_image_url', url)}
             hint="Cards &amp; homepage cover (16:9)"
           />
+          <Select
+            label="Featured Story"
+            value={draft.featured_type}
+            onChange={(e) => set('featured_type', e.target.value as 'none' | 'top' | 'sub')}
+            options={[
+              { value: 'none', label: 'None (Standard News / Regular)' },
+              { value: 'top', label: 'Top Featured (Hero Main Story)' },
+              { value: 'sub', label: 'Sub Featured (Side Story - 3 max)' },
+            ]}
+            hint="Top Featured thar dah apiangin a hlui a nek chhuak ang a; Sub Featured-ah pawh a thar a luhin a hlui ber a nek chhuak zel ang."
+          />
           <Textarea
             label="Excerpt"
             value={draft.excerpt}
@@ -418,13 +449,6 @@ function ArticleEditorPage({ articleId }: { articleId?: number }) {
               onChange={(url) => set('social_image_url', url)}
               hint="Optional. Shown in WhatsApp, Facebook and X previews. 1200×630 works best."
             />
-            <label className="flex items-center justify-between gap-3 rounded-xl border border-stone-200 px-4 py-3 dark:border-stone-800">
-              <span>
-                <span className="block text-sm font-semibold">Featured story</span>
-                <span className="block text-xs text-stone-500 dark:text-stone-400">Show on the homepage featured section (only when published).</span>
-              </span>
-              <input type="checkbox" checked={draft.featured} onChange={(e) => set('featured', e.target.checked)} className="size-5 accent-[--color-accent-600]" aria-label="Mark as featured" />
-            </label>
           </div>
         </details>
 

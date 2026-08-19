@@ -24,7 +24,7 @@ export function AdminDashboard() {
     { label: 'Published', value: stats?.published, icon: 'check', to: '/admin/articles', accent: 'text-emerald-500' },
     { label: 'Drafts', value: stats?.drafts, icon: 'pencil', to: '/admin/articles', accent: 'text-amber-500' },
     { label: 'Categories', value: stats?.categories, icon: 'tag', to: '/admin/categories' },
-    { label: 'Featured stories', value: stats?.featured, icon: 'star', to: '/admin/featured', accent: 'text-accent-500' },
+    { label: 'Featured stories', value: stats?.featured, icon: 'star', to: '/admin/articles', accent: 'text-accent-500' },
     { label: 'Media files', value: stats?.media, icon: 'image', to: '/admin/media' },
   ]
 

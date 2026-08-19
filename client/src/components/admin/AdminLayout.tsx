@@ -21,7 +21,6 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/admin/dashboard', label: 'Dashboard', icon: 'dashboard' },
   { to: '/admin/articles', label: 'Articles', icon: 'file' },
   { to: '/admin/categories', label: 'Categories', icon: 'tag' },
-  { to: '/admin/featured', label: 'Featured', icon: 'star' },
   { to: '/admin/media', label: 'Media', icon: 'image' },
   { to: '/admin/settings', label: 'Settings', icon: 'sliders' },
 ]

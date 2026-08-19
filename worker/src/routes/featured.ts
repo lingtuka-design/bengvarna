@@ -5,6 +5,52 @@ import { requireAuth } from '../auth'
 
 export const featuredRoutes = new Hono<{ Bindings: Env }>()
 
+export async function assignFeaturedType(db: D1Database, articleId: number, type: 'none' | 'top' | 'sub') {
+  if (type === 'none') {
+    await db.prepare('DELETE FROM featured_articles WHERE article_id = ?').bind(articleId).run()
+    return
+  }
+
+  if (type === 'top') {
+    // 1. Remove whatever was at position 0 (Top Featured)
+    // 2. Remove this article from anywhere in featured_articles
+    // 3. Insert this article at position 0
+    await db.batch([
+      db.prepare('DELETE FROM featured_articles WHERE position = 0 OR article_id = ?').bind(articleId),
+      db.prepare('INSERT INTO featured_articles (article_id, position) VALUES (?, 0)').bind(articleId),
+    ])
+    return
+  }
+
+  if (type === 'sub') {
+    // 1. Fetch current sub-featured articles excluding this article
+    const { results } = await db
+      .prepare('SELECT article_id FROM featured_articles WHERE position >= 1 AND article_id <> ? ORDER BY position ASC')
+      .bind(articleId)
+      .all<{ article_id: number }>()
+
+    // Keep at most 2 previous sub-featured articles (the 3rd is pushed out)
+    const existing = results.slice(0, 2).map((r) => r.article_id)
+
+    const batch: D1PreparedStatement[] = [
+      // Remove this article and existing sub featured entries
+      db.prepare('DELETE FROM featured_articles WHERE position >= 1 OR article_id = ?').bind(articleId),
+      // New article takes position 1
+      db.prepare('INSERT INTO featured_articles (article_id, position) VALUES (?, 1)').bind(articleId),
+    ]
+
+    // Shift existing: 1st becomes 2, 2nd becomes 3
+    if (existing[0]) {
+      batch.push(db.prepare('INSERT INTO featured_articles (article_id, position) VALUES (?, 2)').bind(existing[0]))
+    }
+    if (existing[1]) {
+      batch.push(db.prepare('INSERT INTO featured_articles (article_id, position) VALUES (?, 3)').bind(existing[1]))
+    }
+
+    await db.batch(batch)
+  }
+}
+
 featuredRoutes.get('/api/featured', async (c) => {
   const { results } = await c.env.DB.prepare(
     `SELECT ${ARTICLE_COLS}
@@ -16,66 +62,26 @@ featuredRoutes.get('/api/featured', async (c) => {
      ORDER BY f0.position ASC`,
   ).all()
   c.header('Cache-Control', 'public, max-age=10, s-maxage=30, stale-while-revalidate=60')
-  const primary = results.length > 0 ? results[0] : null
-  const secondary = results.slice(1)
+  const primary = results.find((r) => Number(r.featured_position) === 0) ?? (results.length > 0 ? results[0] : null)
+  const secondary = results.filter((r) => r !== primary).slice(0, 3)
   return c.json({ primary, secondary })
 })
 
-featuredRoutes.put('/api/featured', requireAuth, async (c) => {
-  const body = await c.req.json().catch(() => null)
-  const items = (body?.items ?? []) as Array<{ article_id: number; position: number }>
-  if (!Array.isArray(items) || items.length > 20) return c.json({ error: 'Invalid payload' }, 400)
-
-  const seen = new Set<number>()
-  const validItems: Array<{ article_id: number; position: number }> = []
-  for (const item of items) {
-    if (Number.isFinite(item.article_id) && Number.isFinite(item.position) && item.position >= 0 && !seen.has(item.article_id)) {
-      seen.add(item.article_id)
-      validItems.push(item)
-    }
-  }
-
-  if (validItems.length > 0) {
-    const ids = validItems.map((i) => i.article_id)
-    const placeholders = ids.map(() => '?').join(', ')
-    const { results } = await c.env.DB.prepare(
-      `SELECT id FROM articles WHERE id IN (${placeholders})`,
-    )
-      .bind(...ids)
-      .all<{ id: number }>()
-    const existingIds = new Set(results.map((r) => r.id))
-    const existingItems = validItems.filter((item) => existingIds.has(item.article_id))
-
-    const batch: D1PreparedStatement[] = [c.env.DB.prepare('DELETE FROM featured_articles')]
-    for (const item of existingItems) {
-      batch.push(c.env.DB.prepare('INSERT INTO featured_articles (article_id, position) VALUES (?, ?)').bind(item.article_id, item.position))
-    }
-    await c.env.DB.batch(batch)
-    return c.json({ ok: true })
-  }
-
-  await c.env.DB.prepare('DELETE FROM featured_articles').run()
-  return c.json({ ok: true })
-})
-
-featuredRoutes.post('/api/featured/toggle', requireAuth, async (c) => {
+featuredRoutes.post('/api/featured/assign', requireAuth, async (c) => {
   const body = await c.req.json().catch(() => null)
   const articleId = Number(body?.article_id)
-  const featured = Boolean(body?.featured)
-  if (!Number.isFinite(articleId)) return c.json({ error: 'Invalid article id' }, 400)
+  const type = body?.type as 'none' | 'top' | 'sub'
+  if (!Number.isFinite(articleId) || !['none', 'top', 'sub'].includes(type)) {
+    return c.json({ error: 'Invalid payload' }, 400)
+  }
 
   const article = await c.env.DB.prepare('SELECT id, status FROM articles WHERE id = ?').bind(articleId).first<{ id: number; status: string }>()
   if (!article) return c.json({ error: 'Article not found' }, 404)
 
-  if (featured) {
-    if (article.status !== 'published') return c.json({ error: 'Only published articles can be featured' }, 400)
-    const existing = await c.env.DB.prepare('SELECT id FROM featured_articles WHERE article_id = ?').bind(articleId).first()
-    if (!existing) {
-      const maxRow = await c.env.DB.prepare('SELECT COALESCE(MAX(position) + 1, 0) AS p FROM featured_articles').first<{ p: number }>()
-      await c.env.DB.prepare('INSERT INTO featured_articles (article_id, position) VALUES (?, ?)').bind(articleId, maxRow?.p ?? 0).run()
-    }
-  } else {
-    await c.env.DB.prepare('DELETE FROM featured_articles WHERE article_id = ?').bind(articleId).run()
+  if (type !== 'none' && article.status !== 'published') {
+    return c.json({ error: 'Only published articles can be featured' }, 400)
   }
+
+  await assignFeaturedType(c.env.DB, articleId, type)
   return c.json({ ok: true })
 })

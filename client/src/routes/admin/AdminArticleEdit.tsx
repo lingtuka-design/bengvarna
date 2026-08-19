@@ -40,12 +40,12 @@ const EMPTY_DRAFT: DraftState = {
   cover_image_url: '',
   social_image_url: '',
   category_id: '',
-  author: '',
+  author: 'bengvarna Desk',
   status: 'draft',
   seo_title: '',
   seo_description: '',
   featured: false,
-  published_at: '',
+  published_at: new Date().toISOString(),
 }
 
 function toDraft(article: Article): DraftState {
@@ -208,8 +208,11 @@ function ArticleEditorPage({ articleId }: { articleId?: number }) {
       return
     }
     setSaving(true)
-    const isPublishing = status === 'published' && draft.status !== 'published'
-    saveMutation.mutate({ status, publishedAt: isPublishing ? (draft.published_at || new Date().toISOString()) : undefined })
+    const publishDate = draft.published_at || new Date().toISOString()
+    saveMutation.mutate({
+      status,
+      publishedAt: status === 'published' ? publishDate : (draft.published_at || null),
+    })
   }
 
   const deleteMutation = useMutation({
@@ -354,13 +357,12 @@ function ArticleEditorPage({ articleId }: { articleId?: number }) {
             />
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Input label="Author" value={draft.author} onChange={(e) => set('author', e.target.value)} placeholder="Byline (optional)" />
             <Input
-              label="Published at"
+              label="Publish Date & Time"
               type="datetime-local"
-              value={toLocalInputValue(draft.published_at)}
-              onChange={(e) => set('published_at', e.target.value ? new Date(e.target.value).toISOString() : '')}
-              hint="Optional. Set for scheduling; defaults to now on publish."
+              value={toLocalInputValue(draft.published_at || new Date().toISOString())}
+              onChange={(e) => set('published_at', e.target.value ? new Date(e.target.value).toISOString() : new Date().toISOString())}
+              hint="Publish hun tur date & time (schedule duh chuan a thlak danglam theih)."
             />
           </div>
           <Textarea

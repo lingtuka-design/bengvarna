@@ -48,7 +48,7 @@ function parseArticleBody(body: unknown) {
   const cover_image_url = typeof b.cover_image_url === 'string' ? b.cover_image_url.slice(0, 600) : ''
   const social_image_url = typeof b.social_image_url === 'string' ? b.social_image_url.slice(0, 600) : ''
   const category_id = b.category_id === null || b.category_id === undefined || b.category_id === '' ? null : Number(b.category_id)
-  const author = typeof b.author === 'string' ? b.author.trim().slice(0, 100) : ''
+  const author = typeof b.author === 'string' && b.author.trim() ? b.author.trim().slice(0, 100) : 'bengvarna Desk'
   const status = VALID_STATUSES.includes(b.status as (typeof VALID_STATUSES)[number]) ? (b.status as string) : 'draft'
   const seo_title = typeof b.seo_title === 'string' ? b.seo_title.slice(0, 200) : ''
   const seo_description = typeof b.seo_description === 'string' ? b.seo_description.slice(0, 300) : ''

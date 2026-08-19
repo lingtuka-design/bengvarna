@@ -365,23 +365,20 @@ function ArticleEditorPage({ articleId }: { articleId?: number }) {
               hint="Publish hun tur date & time (schedule duh chuan a thlak danglam theih)."
             />
           </div>
-          <Textarea
-            label="Excerpt"
-            value={draft.excerpt}
-            onChange={(e) => set('excerpt', e.target.value)}
-            rows={3}
-            maxLength={500}
-            hint={`Short summary shown in cards and search results. ${500 - draft.excerpt.length} characters left.`}
-            placeholder="One or two sentences that make someone want to read more…"
-          />
-        </section>
-
-        <section className="rounded-2xl border border-stone-200 bg-white p-4 dark:border-stone-800 dark:bg-stone-900 sm:p-6">
           <ImageUploader
             label="Cover image"
             value={draft.cover_image_url}
             onChange={(url) => set('cover_image_url', url)}
-            hint="Appears on cards, the homepage and social previews. Landscape 16:9 works best."
+            hint="Cards &amp; homepage cover (16:9)"
+          />
+          <Textarea
+            label="Excerpt"
+            value={draft.excerpt}
+            onChange={(e) => set('excerpt', e.target.value)}
+            rows={2}
+            maxLength={500}
+            hint={`Short summary shown in cards and search results. ${500 - draft.excerpt.length} characters left.`}
+            placeholder="One or two sentences that make someone want to read more…"
           />
         </section>
 

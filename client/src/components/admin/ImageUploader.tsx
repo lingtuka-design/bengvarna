@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { apiPath, uploadMediaWithProgress } from '../../lib/api'
+import { uploadMediaWithProgress } from '../../lib/api'
 import { cn } from '../../lib/utils'
 import { Icon } from '../ui/Icon'
 import { Button } from '../ui/Button'
@@ -16,11 +16,13 @@ interface ImageUploaderProps {
   hint?: string
 }
 
-export function ImageUploader({ value, onChange, label = 'Image', hint }: ImageUploaderProps) {
+export function ImageUploader({ value, onChange, label = 'Cover image', hint }: ImageUploaderProps) {
   const [pickerOpen, setPickerOpen] = useState(false)
   const [progress, setProgress] = useState<number | null>(null)
+  const [dragOver, setDragOver] = useState(false)
   const { toast } = useToast()
   const queryClient = useQueryClient()
+  const inputId = `${label.toLowerCase().replace(/\s+/g, '-')}-file-input`
 
   const handleFile = async (file: File) => {
     if (!ACCEPTED.includes(file.type)) {
@@ -46,49 +48,126 @@ export function ImageUploader({ value, onChange, label = 'Image', hint }: ImageU
 
   return (
     <div>
-      <span className="mb-1.5 block text-sm font-semibold text-stone-700 dark:text-stone-300">{label}</span>
+      <div className="mb-2 flex items-center justify-between">
+        <span className="block text-sm font-semibold text-stone-700 dark:text-stone-300">{label}</span>
+        {hint && <span className="text-xs text-stone-400 dark:text-stone-500">{hint}</span>}
+      </div>
+
       {value ? (
-        <div className="group relative overflow-hidden rounded-2xl border border-stone-200 dark:border-stone-800">
-          <img src={value} alt="" className="aspect-video w-full object-cover" />
-          <div className="absolute inset-0 flex items-end justify-center gap-2 bg-gradient-to-t from-stone-950/70 via-transparent to-transparent p-3 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
-            <Button size="sm" variant="outline" className="bg-white/95 text-stone-800 dark:bg-stone-900/95 dark:text-stone-200" onClick={() => setPickerOpen(true)}>
-              <Icon name="image" className="size-4" />
+        <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-stone-200 bg-stone-50/70 p-3 dark:border-stone-800 dark:bg-stone-900/60">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="relative size-16 shrink-0 overflow-hidden rounded-lg border border-stone-200 bg-stone-200 dark:border-stone-700 dark:bg-stone-800 sm:h-16 sm:w-24">
+              <img src={value} alt="" className="size-full object-cover" />
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-xs font-semibold text-stone-800 dark:text-stone-200">
+                {value.split('/').pop()}
+              </p>
+              <p className="mt-0.5 text-[11px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1 font-medium">
+                <Icon name="check" className="size-3" /> Image attached
+              </p>
+            </div>
+          </div>
+
+          <div className="flex shrink-0 items-center gap-1.5">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => document.getElementById(inputId)?.click()}
+              className="h-8 text-xs font-semibold"
+            >
+              <Icon name="upload" className="size-3.5" />
+              Upload new
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => setPickerOpen(true)}
+              className="h-8 text-xs font-semibold"
+            >
+              <Icon name="image" className="size-3.5" />
               Library
             </Button>
-            <Button size="sm" variant="outline" className="bg-white/95 text-stone-800 dark:bg-stone-900/95 dark:text-stone-200" onClick={() => document.getElementById(`${label}-file-input`)?.click()}>
-              <Icon name="upload" className="size-4" />
-              Replace
-            </Button>
-            <Button size="sm" variant="danger" onClick={() => onChange('')}>
-              <Icon name="trash" className="size-4" />
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              onClick={() => onChange('')}
+              className="h-8 text-xs font-semibold text-red-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40"
+            >
+              <Icon name="trash" className="size-3.5" />
               Remove
             </Button>
           </div>
         </div>
       ) : (
-        <button
-          type="button"
-          onClick={() => document.getElementById(`${label}-file-input`)?.click()}
-          onDragOver={(e) => e.preventDefault()}
+        <div
+          onDragOver={(e) => {
+            e.preventDefault()
+            setDragOver(true)
+          }}
+          onDragLeave={() => setDragOver(false)}
           onDrop={(e) => {
             e.preventDefault()
+            setDragOver(false)
             const file = e.dataTransfer.files?.[0]
             if (file) void handleFile(file)
           }}
-          className="flex aspect-video w-full flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-stone-300 bg-stone-50 text-stone-500 transition-colors hover:border-accent-400 hover:text-accent-600 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-400 dark:hover:border-accent-500"
+          className={cn(
+            'flex flex-wrap items-center justify-between gap-3 rounded-xl border border-dashed p-3 transition-colors sm:px-4 sm:py-3.5',
+            dragOver
+              ? 'border-accent-500 bg-accent-50/50 dark:border-accent-400 dark:bg-accent-950/20'
+              : 'border-stone-300 bg-stone-50/60 hover:border-stone-400 dark:border-stone-700 dark:bg-stone-900/40',
+          )}
         >
-          <Icon name="upload" className="size-7" />
-          <span className="text-sm font-semibold">Tap to upload or drop an image</span>
-          <span className="text-xs text-stone-400 dark:text-stone-500">JPEG · PNG · WebP · AVIF · up to 10 MB</span>
-        </button>
-      )}
-      {progress !== null && (
-        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-stone-200 dark:bg-stone-800" role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100} aria-label="Upload progress">
-          <div className="h-full rounded-full bg-accent-500 transition-all" style={{ width: `${progress}%` }} />
+          <div className="flex items-center gap-3">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-stone-200/80 text-stone-500 dark:bg-stone-800 dark:text-stone-400">
+              <Icon name="image" className="size-5" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-stone-700 dark:text-stone-300">
+                Add a cover photo for this story
+              </p>
+              <p className="text-[11px] text-stone-400 dark:text-stone-500">
+                Drag &amp; drop or click upload (JPG, PNG, WebP up to 10MB)
+              </p>
+            </div>
+          </div>
+
+          <div className="flex shrink-0 items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => setPickerOpen(true)}
+              className="h-8 text-xs font-semibold"
+            >
+              <Icon name="image" className="size-3.5" />
+              Library
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => document.getElementById(inputId)?.click()}
+              className="h-8 text-xs font-semibold"
+            >
+              <Icon name="upload" className="size-3.5" />
+              Upload
+            </Button>
+          </div>
         </div>
       )}
+
+      {progress !== null && (
+        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-stone-200 dark:bg-stone-800" role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100} aria-label="Upload progress">
+          <div className="h-full rounded-full bg-accent-500 transition-all duration-150" style={{ width: `${progress}%` }} />
+        </div>
+      )}
+
       <input
-        id={`${label}-file-input`}
+        id={inputId}
         type="file"
         accept={ACCEPTED.join(',')}
         className="sr-only"
@@ -98,15 +177,15 @@ export function ImageUploader({ value, onChange, label = 'Image', hint }: ImageU
           e.target.value = ''
         }}
       />
-      {hint && <p className="mt-1.5 text-xs text-stone-500 dark:text-stone-400">{hint}</p>}
-      <div className={cn('mt-2 flex items-center justify-between gap-2')}>
-        <span className="truncate text-xs text-stone-400 dark:text-stone-500">{value ? value.split('/').pop() : 'No image selected'}</span>
-        <Button type="button" variant="ghost" size="sm" onClick={() => setPickerOpen(true)}>
-          <Icon name="image" className="size-4" />
-          Choose from library
-        </Button>
-      </div>
-      <MediaPickerModal open={pickerOpen} onClose={() => setPickerOpen(false)} onSelect={(url) => onChange(url)} />
+
+      <MediaPickerModal
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        onSelect={(url) => {
+          onChange(url)
+          setPickerOpen(false)
+        }}
+      />
     </div>
   )
 }

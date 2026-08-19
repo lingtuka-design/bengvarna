@@ -106,10 +106,10 @@ categoriesRoutes.delete('/api/categories/:id', requireAuth, async (c) => {
   if (!Number.isFinite(id)) return c.json({ error: 'Invalid id' }, 400)
   const existing = await c.env.DB.prepare('SELECT id FROM categories WHERE id = ?').bind(id).first()
   if (!existing) return c.json({ error: 'Category not found' }, 404)
-  const count = await c.env.DB.prepare('SELECT COUNT(*) AS n FROM articles WHERE category_id = ?').bind(id).first<{ n: number }>()
-  if ((count?.n ?? 0) > 0) {
-    return c.json({ error: 'This category is used by articles. Reassign or delete those articles first.' }, 409)
-  }
-  await c.env.DB.prepare('DELETE FROM categories WHERE id = ?').bind(id).run()
+
+  await c.env.DB.batch([
+    c.env.DB.prepare('UPDATE articles SET category_id = NULL WHERE category_id = ?').bind(id),
+    c.env.DB.prepare('DELETE FROM categories WHERE id = ?').bind(id),
+  ])
   return c.json({ ok: true })
 })

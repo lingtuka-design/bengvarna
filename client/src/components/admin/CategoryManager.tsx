@@ -44,6 +44,7 @@ export function CategoryManager() {
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ['categories'] })
     queryClient.invalidateQueries({ queryKey: ['bootstrap'] })
+    queryClient.invalidateQueries({ queryKey: ['articles'] })
   }
 
   const openCreate = () => {

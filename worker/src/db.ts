@@ -88,7 +88,7 @@ export async function ensureSettings(env: Env): Promise<void> {
 
 export async function getSettings(env: Env): Promise<Record<string, string>> {
   const { results } = await env.DB.prepare('SELECT key, value FROM site_settings').all<{ key: string; value: string }>()
-  const out: Record<string, string> = {}
+  const out: Record<string, string> = { ...DEFAULT_SETTINGS }
   for (const row of results) out[row.key] = row.value
   return out
 }

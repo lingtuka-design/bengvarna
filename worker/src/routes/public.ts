@@ -5,16 +5,17 @@ import { ensureSettings, getSettings } from '../db'
 export const publicRoutes = new Hono<{ Bindings: Env }>()
 
 publicRoutes.get('/api/bootstrap', async (c) => {
-  await ensureSettings(c.env)
-  const settings = await getSettings(c.env)
-  const categories = await c.env.DB.prepare(
-    `SELECT c.id, c.name, c.slug, c.description, c.color, c.sort_order, c.is_active,
-       (SELECT COUNT(*) FROM articles a WHERE a.category_id = c.id AND a.status = 'published') AS article_count
-     FROM categories c
-     WHERE c.is_active = 1
-     ORDER BY c.sort_order ASC, c.name ASC`,
-  ).all()
-  c.header('Cache-Control', 'no-cache, no-store, must-revalidate')
+  const [settings, categories] = await Promise.all([
+    getSettings(c.env),
+    c.env.DB.prepare(
+      `SELECT c.id, c.name, c.slug, c.description, c.color, c.sort_order, c.is_active,
+         (SELECT COUNT(*) FROM articles a WHERE a.category_id = c.id AND a.status = 'published') AS article_count
+       FROM categories c
+       WHERE c.is_active = 1
+       ORDER BY c.sort_order ASC, c.name ASC`,
+    ).all(),
+  ])
+  c.header('Cache-Control', 'public, max-age=10, s-maxage=30, stale-while-revalidate=60')
   return c.json({ settings, categories: categories.results })
 })
 

@@ -101,20 +101,21 @@ articlesRoutes.get('/api/articles', async (c) => {
   }
   const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : ''
 
-  const countRow = await c.env.DB.prepare(
-    `SELECT COUNT(*) AS n FROM articles a LEFT JOIN categories c ON c.id = a.category_id LEFT JOIN featured_articles f ON f.article_id = a.id ${whereSql}`,
-  )
-    .bind(...binds)
-    .first<{ n: number }>()
+  const [countRow, { results }] = await Promise.all([
+    c.env.DB.prepare(
+      `SELECT COUNT(*) AS n FROM articles a LEFT JOIN categories c ON c.id = a.category_id LEFT JOIN featured_articles f ON f.article_id = a.id ${whereSql}`,
+    )
+      .bind(...binds)
+      .first<{ n: number }>(),
+    c.env.DB.prepare(
+      `SELECT ${ARTICLE_COLS} ${ARTICLE_FROM} ${whereSql} ORDER BY COALESCE(a.published_at, a.created_at) DESC LIMIT ? OFFSET ?`,
+    )
+      .bind(...binds, perPage, offset)
+      .all(),
+  ])
   const total = countRow?.n ?? 0
 
-  const { results } = await c.env.DB.prepare(
-    `SELECT ${ARTICLE_COLS} ${ARTICLE_FROM} ${whereSql} ORDER BY COALESCE(a.published_at, a.created_at) DESC LIMIT ? OFFSET ?`,
-  )
-    .bind(...binds, perPage, offset)
-    .all()
-
-  c.header('Cache-Control', 'no-cache, no-store, must-revalidate')
+  c.header('Cache-Control', isAdmin ? 'no-store' : 'public, max-age=10, s-maxage=30, stale-while-revalidate=60')
   return c.json({ items: results, total, page, perPage, totalPages: Math.max(1, Math.ceil(total / perPage)) })
 })
 
@@ -123,7 +124,7 @@ articlesRoutes.get('/api/admin/articles/:id', requireAuth, async (c) => {
   if (!Number.isFinite(id)) return c.json({ error: 'Invalid id' }, 400)
   const row = await fetchArticleById(c.env.DB, id)
   if (!row) return c.json({ error: 'Article not found' }, 404)
-  c.header('Cache-Control', 'no-cache, no-store, must-revalidate')
+  c.header('Cache-Control', 'no-store')
   return c.json(row)
 })
 
@@ -135,7 +136,7 @@ articlesRoutes.get('/api/articles/:slug', async (c) => {
     .bind(slug)
     .first()
   if (!row) return c.json({ error: 'Article not found' }, 404)
-  c.header('Cache-Control', 'no-cache, no-store, must-revalidate')
+  c.header('Cache-Control', 'public, max-age=10, s-maxage=30, stale-while-revalidate=60')
   return c.json(row)
 })
 

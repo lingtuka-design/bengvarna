@@ -35,6 +35,7 @@ export function Header() {
   const [searchOpen, setSearchOpen] = useState(false)
   useLockBodyScroll(menuOpen)
   const categories = bootstrap?.categories ?? []
+  const navCategories = categories.filter((c) => c.slug.toLowerCase() !== 'news')
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -55,7 +56,7 @@ export function Header() {
             <Logo />
           </Link>
           <nav aria-label="Main navigation" className="flex items-center gap-5">
-            <NavLinks categories={categories.slice(0, 4)} />
+            <NavLinks categories={navCategories.slice(0, 4)} />
           </nav>
           <div className="flex shrink-0 items-center gap-1.5">
             <SearchButton onClick={() => setSearchOpen(true)} />
@@ -90,12 +91,12 @@ export function Header() {
               </button>
             </div>
             <nav aria-label="Mobile navigation" className="flex flex-col gap-1 px-3 py-4">
-              <NavLinks categories={categories} onNavigate={() => setMenuOpen(false)} />
+              <NavLinks categories={navCategories} onNavigate={() => setMenuOpen(false)} />
             </nav>
             <div className="mt-auto border-t border-stone-200 px-4 py-4 dark:border-stone-800">
               <p className="font-display text-sm font-semibold uppercase tracking-[0.18em] text-stone-400 dark:text-stone-500">Categories</p>
               <ul className="mt-3 flex flex-wrap gap-2">
-                {categories.map((c) => (
+                {navCategories.map((c) => (
                   <li key={c.id}>
                     <Link to="/category/$slug" params={{ slug: c.slug }} search={{ page: 1 }} onClick={() => setMenuOpen(false)} className="inline-flex items-center gap-1.5 rounded-full border border-stone-200 px-3 py-1.5 text-sm font-medium text-stone-700 dark:border-stone-800 dark:text-stone-300">
                       {c.color && <span className="size-2 rounded-full" style={{ backgroundColor: c.color }} aria-hidden="true" />}

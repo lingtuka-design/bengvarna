@@ -4,7 +4,7 @@ import { Logo } from './Logo'
 
 export function Footer() {
   const { data: bootstrap } = useBootstrap()
-  const categories = bootstrap?.categories ?? []
+  const categories = (bootstrap?.categories ?? []).filter((c) => c.slug.toLowerCase() !== 'news')
 
   return (
     <footer className="mt-16 border-t border-stone-200 bg-white dark:border-stone-800 dark:bg-stone-950">

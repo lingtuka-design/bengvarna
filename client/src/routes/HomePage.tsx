@@ -40,7 +40,7 @@ function LatestNews() {
             <NewsCard
               article={article}
               variant="lead"
-              showExcerpt={true}
+              showExcerpt={false}
             />
           </div>
           {index === 2 && (

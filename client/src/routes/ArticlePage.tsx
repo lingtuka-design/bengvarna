@@ -65,7 +65,6 @@ export function ArticlePage() {
         <h1 className="mt-4 font-display text-3xl font-semibold leading-tight tracking-tight sm:text-4xl md:text-5xl">
           {article.title}
         </h1>
-        {article.excerpt && <p className="mt-5 text-lg leading-relaxed text-stone-600 dark:text-stone-400 md:text-xl">{article.excerpt}</p>}
         <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-y border-stone-200 py-4 dark:border-stone-800">
           <ArticleMeta article={article} minutes={minutes} showAvatar />
           <ShareButtons url={url} title={article.title} compact />
